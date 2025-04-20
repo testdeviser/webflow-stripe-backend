@@ -22,12 +22,16 @@ exports.handler = async (event) => {
     });
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount, // amount in cents
+      amount: amount,
       currency: "usd",
       customer: customer.id,
       payment_method: payment_method_id,
       confirm: true,
       confirmation_method: "manual",
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: "never", // 💥 prevent redirect-based payments like iDEAL
+      },
       metadata: {
         product_name: product,
         type: "main_product",
@@ -47,13 +51,13 @@ exports.handler = async (event) => {
       }),
     };
   } catch (err) {
-	  console.error("Stripe Error:", err); // Log to Netlify build logs
-	  return {
-		statusCode: 500,
-		headers: {
-		  "Access-Control-Allow-Origin": "*",
-		},
-		body: JSON.stringify({ error: err.message }),
-	  };
-	}
+    console.error("Stripe Error:", err);
+    return {
+      statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({ error: err.message }),
+    };
+  }
 };
