@@ -16,10 +16,19 @@ exports.handler = async (event) => {
   try {
     const { customer_id } = JSON.parse(event.body);
 
+    // Fetch the customer’s default payment method
+    const customer = await stripe.customers.retrieve(customer_id);
+    const defaultPaymentMethod = customer.invoice_settings.default_payment_method;
+
+    if (!defaultPaymentMethod) {
+      throw new Error("No default payment method found for this customer.");
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 1000, // $10 upsell
       currency: "usd",
       customer: customer_id,
+      payment_method: defaultPaymentMethod,
       off_session: true,
       confirm: true,
       metadata: {
@@ -36,6 +45,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({ success: true }),
     };
   } catch (err) {
+    console.error("Stripe 1-click Error:", err);
     return {
       statusCode: 500,
       headers: {
