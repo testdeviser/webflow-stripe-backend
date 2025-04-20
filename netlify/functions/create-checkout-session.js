@@ -47,12 +47,13 @@ exports.handler = async (event) => {
       }),
     };
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({ error: err.message }),
-    };
-  }
+	  console.error("Stripe Error:", err); // Log to Netlify build logs
+	  return {
+		statusCode: 500,
+		headers: {
+		  "Access-Control-Allow-Origin": "*",
+		},
+		body: JSON.stringify({ error: err.message }),
+	  };
+	}
 };
