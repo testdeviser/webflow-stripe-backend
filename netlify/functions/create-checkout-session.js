@@ -2,7 +2,6 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    // CORS preflight
     return {
       statusCode: 200,
       headers: {
@@ -15,28 +14,24 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { name, email, payment_method_id } = JSON.parse(event.body);
+    const { name, email, payment_method_id, product, amount } = JSON.parse(event.body);
 
     const customer = await stripe.customers.create({
       name,
       email,
-      payment_method: payment_method_id,
-      invoice_settings: {
-        default_payment_method: payment_method_id,
-      },
     });
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount, // amount in cents
+      currency: "usd",
       customer: customer.id,
-      line_items: [
-        {
-          price: "price_1RFq7DGKSLF41TDy1CUlWObV", // Replace with your real price ID
-          quantity: 1,
-        },
-      ],
-      success_url: `${process.env.BASE_URL}/one-click-pay?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.BASE_URL}/checkout`,
+      payment_method: payment_method_id,
+      confirm: true,
+      confirmation_method: "manual",
+      metadata: {
+        product_name: product,
+        type: "main_product",
+      },
     });
 
     return {
@@ -44,7 +39,12 @@ exports.handler = async (event) => {
       headers: {
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify({ url: session.url }),
+      body: JSON.stringify({
+        success: true,
+        customer_id: customer.id,
+        product,
+        amount,
+      }),
     };
   } catch (err) {
     return {
