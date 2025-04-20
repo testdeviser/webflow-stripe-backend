@@ -1,6 +1,19 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    // CORS preflight
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+      },
+      body: "OK",
+    };
+  }
+
   try {
     const { name, email, payment_method_id } = JSON.parse(event.body);
 
@@ -18,7 +31,7 @@ exports.handler = async (event) => {
       customer: customer.id,
       line_items: [
         {
-          price: "price_1RFq7DGKSLF41TDy1CUlWObV", // Replace with real Price ID
+          price: "price_1RFq7DGKSLF41TDy1CUlWObV", // Replace with your real price ID
           quantity: 1,
         },
       ],
@@ -28,11 +41,17 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
       body: JSON.stringify({ url: session.url }),
     };
   } catch (err) {
     return {
       statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
       body: JSON.stringify({ error: err.message }),
     };
   }
