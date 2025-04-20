@@ -16,29 +16,28 @@ exports.handler = async (event) => {
   try {
     const { name, email, payment_method_id, product, amount } = JSON.parse(event.body);
 
-    // Step 1: Create customer
     const customer = await stripe.customers.create({ name, email });
 
-    // Step 2: Attach payment method
+    // Step 1: Attach payment method
     await stripe.paymentMethods.attach(payment_method_id, {
       customer: customer.id,
     });
 
-    // Step 3: Set as default
+    // Step 2: Set as default payment method
     await stripe.customers.update(customer.id, {
       invoice_settings: {
         default_payment_method: payment_method_id,
       },
     });
 
-    // Step 4: Confirm initial payment
+    // Step 3: Create + confirm payment intent (cards only)
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: "usd",
       customer: customer.id,
       payment_method: payment_method_id,
       confirm: true,
-      off_session: false, // User is present
+      confirmation_method: "automatic", // 🔒 safely confirm for card
       metadata: {
         product_name: product,
         type: "main_product",
@@ -58,7 +57,7 @@ exports.handler = async (event) => {
       }),
     };
   } catch (err) {
-    console.error("Stripe Error:", err);
+    console.error("Stripe Checkout Error:", err);
     return {
       statusCode: 500,
       headers: {
