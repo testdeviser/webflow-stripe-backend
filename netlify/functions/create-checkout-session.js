@@ -16,33 +16,29 @@ exports.handler = async (event) => {
   try {
     const { name, email, payment_method_id, product, amount } = JSON.parse(event.body);
 
-    const customer = await stripe.customers.create({
-      name,
-      email,
-    });
+    // Step 1: Create customer
+    const customer = await stripe.customers.create({ name, email });
 
-    // 💥 THIS is the missing part — attach payment method to customer
+    // Step 2: Attach payment method
     await stripe.paymentMethods.attach(payment_method_id, {
       customer: customer.id,
     });
 
-    // 💾 Save it as default for future 1-click
+    // Step 3: Set as default
     await stripe.customers.update(customer.id, {
       invoice_settings: {
         default_payment_method: payment_method_id,
       },
     });
 
+    // Step 4: Confirm initial payment
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: "usd",
       customer: customer.id,
       payment_method: payment_method_id,
       confirm: true,
-      automatic_payment_methods: {
-        enabled: true,
-        allow_redirects: "never",
-      },
+      off_session: false, // User is present
       metadata: {
         product_name: product,
         type: "main_product",
