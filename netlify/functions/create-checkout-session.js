@@ -27,10 +27,9 @@ exports.handler = async (event) => {
       customer: customer.id,
       payment_method: payment_method_id,
       confirm: true,
-      confirmation_method: "manual",
       automatic_payment_methods: {
         enabled: true,
-        allow_redirects: "never", // 💥 prevent redirect-based payments like iDEAL
+        allow_redirects: "never", // 💥 block iDEAL/SEPA/etc.
       },
       metadata: {
         product_name: product,
