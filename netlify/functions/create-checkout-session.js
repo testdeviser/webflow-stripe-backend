@@ -14,7 +14,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { name, email, payment_method_id, product, amount } = JSON.parse(event.body);
+    const { name, email, phone, country, zip, exp_month, exp_year, payment_method_id, product, amount } = JSON.parse(event.body);
+
 
     const customer = await stripe.customers.create({ name, email });
 
@@ -25,16 +26,21 @@ exports.handler = async (event) => {
     });
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: "usd",
-      customer: customer.id,
-      payment_method: payment_method_id,
-      confirmation_method: "automatic",
-      metadata: {
-        product_name: product,
-        type: "main_product",
-      },
-    });
+	  amount,
+	  currency: "usd",
+	  customer: customer.id,
+	  payment_method: payment_method_id,
+	  confirmation_method: "automatic",
+	  metadata: {
+		product_name: product,
+		type: "main_product",
+		phone,
+		country,
+		zip,
+		exp_month,
+		exp_year
+	  },
+	});
 
     return {
       statusCode: 200,
