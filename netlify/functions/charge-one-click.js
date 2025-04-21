@@ -14,9 +14,13 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { customer_id } = JSON.parse(event.body);
+    const { customer_id, amount, product_name } = JSON.parse(event.body);
 
-    // Fetch the customer’s default payment method
+    if (!customer_id || !amount) {
+      throw new Error("Missing required parameters.");
+    }
+
+    // Get default payment method
     const customer = await stripe.customers.retrieve(customer_id);
     const defaultPaymentMethod = customer.invoice_settings.default_payment_method;
 
@@ -24,28 +28,35 @@ exports.handler = async (event) => {
       throw new Error("No default payment method found for this customer.");
     }
 
+    // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 1000, // $10 upsell
+      amount,
       currency: "usd",
       customer: customer_id,
       payment_method: defaultPaymentMethod,
       off_session: true,
       confirm: true,
       metadata: {
-        product_name: "Upsell - Premium Addon",
+        product_name: product_name || "Upsell Product",
         type: "upsell_product",
       },
     });
+
+    // Determine redirect flow
+    let redirect_url = "/thank-you";
+    if (amount === 2700) redirect_url = "/upsell-2?customer_id=" + customer_id;
+    else if (amount === 49700) redirect_url = "/upsell-3?customer_id=" + customer_id;
+    else if (amount === 19700) redirect_url = "/thank-you?customer_id=" + customer_id;
 
     return {
       statusCode: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify({ success: true }),
+      body: JSON.stringify({ success: true, redirect_url }),
     };
   } catch (err) {
-    console.error("Stripe 1-click Error:", err);
+    console.error("Stripe One-Click Error:", err);
     return {
       statusCode: 500,
       headers: {
