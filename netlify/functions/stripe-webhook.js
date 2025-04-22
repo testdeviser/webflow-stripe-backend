@@ -1,25 +1,25 @@
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const fetch = require("node-fetch");
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
-  const sig = event.headers["stripe-signature"];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let stripeEvent;
+  const sig = event.headers['stripe-signature'];
 
   try {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    // Decode the raw body
     const rawBody = event.isBase64Encoded
-      ? Buffer.from(event.body, "base64")
-      : Buffer.from(event.body, "utf8");
+      ? Buffer.from(event.body, 'base64')
+      : Buffer.from(event.body, 'utf8');
 
-    stripeEvent = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-  } catch (err) {
-    console.error("❌ Webhook signature verification failed:", err.message);
-    return { statusCode: 400, body: `Webhook Error: ${err.message}` };
-  }
+    // Construct the Stripe event
+    const stripeEvent = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
 
-  if (stripeEvent.type === "payment_intent.succeeded") {
-    const pi = stripeEvent.data.object;
+    // ✅ Example: Payment succeeded
+    if (stripeEvent.type === 'payment_intent.succeeded') {
+      const paymentIntent = stripeEvent.data.object;
+      console.log('✅ Payment succeeded:', paymentIntent);
+	  
+	  const pi = stripeEvent.data.object;
 
     const orderPayload = {
       fields: {
@@ -53,10 +53,18 @@ exports.handler = async (event) => {
     } catch (err) {
       console.error("❌ Failed to create Webflow item:", err.message);
     }
-  }
+	  
+    }
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ received: true }),
-  };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ received: true }),
+    };
+  } catch (err) {
+    console.error('❌ Webhook error:', err.message);
+    return {
+      statusCode: 400,
+      body: `Webhook Error: ${err.message}`,
+    };
+  }
 };
