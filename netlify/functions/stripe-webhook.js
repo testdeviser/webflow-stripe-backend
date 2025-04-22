@@ -47,7 +47,7 @@ exports.handler = async (event) => {
     } catch (err) {
       console.error("❌ Webflow v2 item creation failed:", err.message);
     }
-  }
+  } 
 
   return {
     statusCode: 200,
