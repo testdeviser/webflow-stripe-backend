@@ -24,11 +24,11 @@ exports.handler = async (event) => {
     const orderPayload = {
 	  fieldData: {
 		name: `${pi.metadata.product_name || "Order"} - ${pi.metadata.type || "purchase"}`,
-		customer_id: pi.customer,
+		customer-id: pi.customer,
 		product: pi.metadata.product_name,
 		amount: pi.amount / 100,
 		type: pi.metadata.type,
-		email: pi.receipt_email || pi.metadata.email || "unknown",
+		//email: pi.receipt_email || pi.metadata.email || "unknown",
 		status: "Paid",
 		date: new Date(pi.created * 1000).toISOString()
 	  }
