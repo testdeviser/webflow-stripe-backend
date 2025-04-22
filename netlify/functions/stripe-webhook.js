@@ -1,16 +1,23 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-// Use dynamic import for node-fetch to avoid CommonJS vs ESM error
-const fetch = (...args) =>
-  import("node-fetch").then(({ default: fetch }) => fetch(...args));
+exports.config = {
+  bodyParser: false
+};
+
+const getRawBody = async (event) => {
+  return Buffer.from(event.body, event.isBase64Encoded ? "base64" : "utf8");
+};
+
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 exports.handler = async (event) => {
+  const rawBody = await getRawBody(event);
   const sig = event.headers["stripe-signature"];
   let stripeEvent;
 
   try {
-    stripeEvent = stripe.webhooks.constructEvent(event.body, sig, endpointSecret);
+    stripeEvent = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
   } catch (err) {
     console.error("❌ Stripe Signature Error:", err.message);
     return { statusCode: 400, body: `Webhook Error: ${err.message}` };
@@ -40,9 +47,9 @@ exports.handler = async (event) => {
           headers: {
             Authorization: `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
             "Content-Type": "application/json",
-            "Accept-Version": "2.0.0",
+            "Accept-Version": "2.0.0"
           },
-          body: JSON.stringify(orderPayload),
+          body: JSON.stringify(orderPayload)
         }
       );
 
@@ -55,6 +62,6 @@ exports.handler = async (event) => {
 
   return {
     statusCode: 200,
-    body: "Webhook handled (v2)",
+    body: "Webhook handled successfully"
   };
 };
