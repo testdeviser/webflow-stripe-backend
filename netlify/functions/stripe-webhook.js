@@ -1,6 +1,8 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-const fetch = require("node-fetch");
+
+// Use dynamic import for node-fetch to support ESM in CommonJS
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 exports.handler = async (event) => {
   const sig = event.headers["stripe-signature"];
