@@ -1,18 +1,21 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const { buffer } = require("micro");
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 exports.config = {
-  bodyParser: false
+  bodyParser: false, // required to preserve raw body
 };
 
+// node-fetch workaround for CommonJS
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   try {
+    // Decode raw body
     const rawBody = Buffer.from(event.body, event.isBase64Encoded ? "base64" : "utf8");
     const signature = event.headers["stripe-signature"];
+
+    // Stripe verification
     const stripeEvent = stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
 
     if (stripeEvent.type === "payment_intent.succeeded") {
@@ -27,8 +30,8 @@ exports.handler = async (event, context) => {
           type: pi.metadata.type,
           email: pi.receipt_email || pi.metadata.email || "unknown",
           status: "Paid",
-          date: new Date(pi.created * 1000).toISOString()
-        }
+          date: new Date(pi.created * 1000).toISOString(),
+        },
       };
 
       const res = await fetch(
@@ -38,9 +41,9 @@ exports.handler = async (event, context) => {
           headers: {
             Authorization: `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
             "Content-Type": "application/json",
-            "Accept-Version": "2.0.0"
+            "Accept-Version": "2.0.0",
           },
-          body: JSON.stringify(orderPayload)
+          body: JSON.stringify(orderPayload),
         }
       );
 
@@ -50,13 +53,13 @@ exports.handler = async (event, context) => {
 
     return {
       statusCode: 200,
-      body: "Webhook handled successfully"
+      body: "Webhook handled successfully",
     };
   } catch (err) {
-    console.error("❌ Stripe Webhook Error:", err.message);
+    console.error("❌ Stripe Webhook Signature Error:", err.message);
     return {
       statusCode: 400,
-      body: `Webhook Error: ${err.message}`
+      body: `Webhook Error: ${err.message}`,
     };
   }
 };
