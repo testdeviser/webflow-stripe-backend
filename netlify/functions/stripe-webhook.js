@@ -1,17 +1,24 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-// Use dynamic import for node-fetch to support ESM in CommonJS
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
+const { buffer } = require("micro"); // 👈 install this: npm install micro
 
-exports.handler = async (event) => {
+exports.config = {
+  bodyParser: false, // Netlify: disable default JSON parsing
+};
+
+exports.handler = async (event, context) => {
   const sig = event.headers["stripe-signature"];
   let stripeEvent;
 
   try {
-    stripeEvent = stripe.webhooks.constructEvent(event.rawBody, sig, endpointSecret);
+    const rawBody = await buffer(event); // 👈 get the raw body
+    stripeEvent = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
   } catch (err) {
-    return { statusCode: 400, body: `Webhook Error: ${err.message}` };
+    return {
+      statusCode: 400,
+      body: `Webhook Error: ${err.message}`,
+    };
   }
 
   if (stripeEvent.type === "payment_intent.succeeded") {
@@ -26,8 +33,8 @@ exports.handler = async (event) => {
         type: pi.metadata.type,
         email: pi.receipt_email || pi.metadata.email || "unknown",
         status: "Paid",
-        date: new Date(pi.created * 1000).toISOString()
-      }
+        date: new Date(pi.created * 1000).toISOString(),
+      },
     };
 
     try {
@@ -45,14 +52,14 @@ exports.handler = async (event) => {
       );
 
       const result = await res.json();
-      console.log("✅ Webflow v2 CMS item created:", result);
+      console.log("✅ Webflow CMS item created:", result);
     } catch (err) {
-      console.error("❌ Webflow v2 item creation failed:", err.message);
+      console.error("❌ Webflow CMS item creation failed:", err.message);
     }
   }
 
   return {
     statusCode: 200,
-    body: "Webhook handled (v2)",
+    body: "Webhook handled successfully",
   };
 };
