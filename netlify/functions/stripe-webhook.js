@@ -36,6 +36,9 @@ exports.handler = async (event) => {
         };
       }
 
+      // Generate a custom order_id based on the payment intent ID or another unique identifier
+      const orderId = `order-${pi.id}`;
+
       const orderPayload = {
         order: {
           email: pi.receipt_email || pi.metadata.email || "customer@unknown.com",
@@ -57,8 +60,9 @@ exports.handler = async (event) => {
       };
 
       try {
+        // You would need a valid orderId to interact with Webflow, so we'll use the custom orderId here
         const res = await fetch(
-          `https://api.webflow.com/v2/sites/${process.env.WEBFLOW_SITE_ID}/orders`,
+          `https://api.webflow.com/v2/sites/${process.env.WEBFLOW_SITE_ID}/orders/${orderId}/unfulfill`,
           {
             method: "POST",
             headers: {
@@ -71,9 +75,9 @@ exports.handler = async (event) => {
         );
 
         const result = await res.json();
-        console.log("✅ Webflow order created:", result);
+        console.log("✅ Webflow order updated:", result);
       } catch (err) {
-        console.error("❌ Failed to create Webflow order:", err.message);
+        console.error("❌ Failed to update Webflow order:", err.message);
       }
     }
 
