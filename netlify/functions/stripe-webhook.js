@@ -76,7 +76,7 @@ exports.handler = async (event) => {
         });
 
         const ghlResult = await ghlRes.text();
-        console.log("✅ Sent data to GHL:", ghlResult);
+        console.log("✅ Sent data to GHL:".GHL_WEBHOOK_URL, ghlResult);
       } catch (err) {
         console.error("❌ Failed to send data to GHL:", err.message);
       }
