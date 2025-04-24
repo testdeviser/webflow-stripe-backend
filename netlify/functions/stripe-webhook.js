@@ -1,65 +1,47 @@
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const fetch = require('node-fetch');
 
-// Map Stripe product names to Webflow Product IDs
-const PRODUCT_MAP = {
-  "Ultimate Organic Package": "67ff6da175469b4eabe08aed",
-  "Ultimate Ads Package": "67fe1588c737ed6e1c818578",
-  "Ultimate Brand Scaling Package": "67fe14db4bf7ef688cf2d9ab",
-  "THE 7-FIGURE META ADS PLAYBOOK": "67fdfdf7e92c61467c85d304",
-  "5 DFY STATIC ADS DONE FOR YOU": "67fdfd2cdedb2affbe27664d",
-  "10 DFY STATIC ADS DONE FOR YOU": "67fdfc9227b300e7c3dd77c0",
+const DOWNLOAD_LINKS = {
+  "Ultimate Organic Package": "https://yourdomain.com/downloads/organic-package.zip",
+  "Ultimate Ads Package": "https://yourdomain.com/downloads/ads-package.zip",
+  "Ultimate Brand Scaling Package": "https://yourdomain.com/downloads/brand-scaling.zip",
+  "THE 7-FIGURE META ADS PLAYBOOK": "https://yourdomain.com/downloads/7-figure-playbook.pdf",
+  "5 DFY STATIC ADS DONE FOR YOU": "https://yourdomain.com/downloads/5-dfy-ads.zip",
+  "10 DFY STATIC ADS DONE FOR YOU": "https://yourdomain.com/downloads/10-dfy-ads.zip",
 };
 
 exports.handler = async (event) => {
-  const sig = event.headers["stripe-signature"];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const sig = event.headers['stripe-signature'];
 
   try {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
     const rawBody = event.isBase64Encoded
-      ? Buffer.from(event.body, "base64")
-      : Buffer.from(event.body, "utf8");
+      ? Buffer.from(event.body, 'base64')
+      : Buffer.from(event.body, 'utf8');
 
     const stripeEvent = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
 
-    if (stripeEvent.type === "payment_intent.succeeded") {
+    if (stripeEvent.type === 'payment_intent.succeeded') {
       const pi = stripeEvent.data.object;
+      console.log('✅ Payment succeeded:', pi);
 
-      const productName = pi.metadata.product_name;
-      const productId = PRODUCT_MAP[productName];
-
-      if (!productId) {
-        console.error("❌ Unrecognized product:", productName);
-        return {
-          statusCode: 400,
-          body: `Unknown product: ${productName}`,
-        };
-      }
-
+      // Create item in Webflow CMS
       const orderPayload = {
-        order: {
-          email: pi.receipt_email || pi.metadata.email || "customer@unknown.com",
-          shippingAddress: {
-            firstName: pi.metadata.name || "Customer",
-            phoneNumber: pi.metadata.phone || "N/A",
-            country: pi.metadata.country || "US",
-            postalCode: pi.metadata.zip || "",
-          },
-          products: [
-            {
-              productId,
-              quantity: 1,
-            },
-          ],
-          status: "unfulfilled",
-          paymentStatus: "paid",
-        },
+        fieldData: {
+          name: `${pi.metadata.product_name || "Order"} - ${pi.metadata.type || "purchase"}`,
+          customerid: pi.customer,
+          product: pi.metadata.product_name,
+          amount: pi.amount / 100,
+          type: pi.metadata.type,
+          status: "Paid",
+          date: new Date(pi.created * 1000).toISOString()
+        }
       };
 
       try {
-        // Send POST request to create an order in Webflow
         const res = await fetch(
-          `https://api.webflow.com/v2/sites/${process.env.WEBFLOW_SITE_ID}/orders`,
+          `https://api.webflow.com/v2/collections/${process.env.WEBFLOW_COLLECTION_ID}/items?live=true`,
           {
             method: "POST",
             headers: {
@@ -72,25 +54,43 @@ exports.handler = async (event) => {
         );
 
         const result = await res.json();
-        if (res.ok) {
-          const orderId = result._id; // Webflow will generate this
-          console.log("✅ Webflow order created with ID:", orderId);
-
-          // You can perform any further actions with the orderId here
-        } else {
-          console.error("❌ Webflow order creation failed:", result);
-        }
+        console.log("✅ Webflow CMS item created:", result);
       } catch (err) {
-        console.error("❌ Failed to create Webflow order:", err.message);
+        console.error("❌ Failed to create Webflow item:", err.message);
+      }
+
+      // Send order confirmation via GoHighLevel
+      const ghlWebhookUrl = process.env.GHL_WEBHOOK_URL; // Set this in env or hardcode
+
+      const ghlPayload = {
+        name: pi.metadata.name || 'Customer',
+        email: pi.receipt_email || pi.metadata.email,
+        phone: pi.metadata.phone || '',
+        product: pi.metadata.product_name,
+        download_url: DOWNLOAD_LINKS[pi.metadata.product_name],
+        amount: pi.amount / 100
+      };
+
+      try {
+        const ghlRes = await fetch(ghlWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(ghlPayload),
+        });
+
+        const ghlResult = await ghlRes.json();
+        console.log("✅ GHL Webhook triggered:", ghlResult);
+      } catch (err) {
+        console.error("❌ Failed to trigger GHL webhook:", err.message);
       }
     }
 
     return {
       statusCode: 200,
-      body: "Webhook processed",
+      body: JSON.stringify({ received: true }),
     };
   } catch (err) {
-    console.error("❌ Webhook error:", err.message);
+    console.error('❌ Webhook error:', err.message);
     return {
       statusCode: 400,
       body: `Webhook Error: ${err.message}`,
