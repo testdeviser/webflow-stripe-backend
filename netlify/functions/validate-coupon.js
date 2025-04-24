@@ -1,6 +1,6 @@
 exports.handler = async (event) => {
   const headers = {
-    "Access-Control-Allow-Origin": "*", // or specify "https://connect-social-see.webflow.io" instead of "*"
+    "Access-Control-Allow-Origin": "*", // Or restrict to a specific domain
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Allow-Methods": "POST, OPTIONS"
   };
@@ -14,32 +14,48 @@ exports.handler = async (event) => {
     };
   }
 
-  const { coupon_code, amount } = JSON.parse(event.body);
-
-  const validCoupons = {
-    "SAVE10": 0.10,
-    "SAVE20": 0.20
-  };
-
-  const code = coupon_code?.toUpperCase();
-  if (!code || !validCoupons[code]) {
+  if (event.httpMethod !== "POST") {
     return {
-      statusCode: 400,
+      statusCode: 405,
       headers,
-      body: JSON.stringify({ error: "Invalid or expired coupon code." })
+      body: JSON.stringify({ error: "Method Not Allowed" })
     };
   }
 
-  const discountRate = validCoupons[code];
-  const newAmount = Math.floor(amount * (1 - discountRate));
-  const message = `Coupon ${code} applied. You saved $${((amount - newAmount) / 100).toFixed(2)}!`;
+  try {
+    const { coupon, amount } = JSON.parse(event.body);
 
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({
-      new_amount: newAmount,
-      discount_message: message
-    })
-  };
+    const validCoupons = {
+      "SAVE10": 0.10,
+      "SAVE20": 0.20
+    };
+
+    const code = coupon?.toUpperCase();
+
+    if (!code || !validCoupons[code]) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ valid: false })
+      };
+    }
+
+    const discount = validCoupons[code];
+    const discountedAmount = Math.round(amount * (1 - discount));
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        valid: true,
+        discountedAmount
+      })
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: "Server error", details: err.message })
+    };
+  }
 };
