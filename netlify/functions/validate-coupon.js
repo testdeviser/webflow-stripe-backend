@@ -1,4 +1,19 @@
 exports.handler = async (event) => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*", // or specify "https://connect-social-see.webflow.io" instead of "*"
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS"
+  };
+
+  // Handle preflight (OPTIONS) request
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers,
+      body: "OK"
+    };
+  }
+
   const { coupon_code, amount } = JSON.parse(event.body);
 
   const validCoupons = {
@@ -10,6 +25,7 @@ exports.handler = async (event) => {
   if (!code || !validCoupons[code]) {
     return {
       statusCode: 400,
+      headers,
       body: JSON.stringify({ error: "Invalid or expired coupon code." })
     };
   }
@@ -20,6 +36,7 @@ exports.handler = async (event) => {
 
   return {
     statusCode: 200,
+    headers,
     body: JSON.stringify({
       new_amount: newAmount,
       discount_message: message
