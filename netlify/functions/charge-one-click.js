@@ -14,7 +14,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { customer_id, amount, product_name } = JSON.parse(event.body);
+    const { customer_id, amount, product_name,customer_name, customer_email, customer_phone } = JSON.parse(event.body);
 
     if (!customer_id || !amount) {
       throw new Error("Missing required parameters.");
@@ -31,6 +31,7 @@ exports.handler = async (event) => {
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
+	  name: customer_name,
       currency: "usd",
       customer: customer_id,
       payment_method: defaultPaymentMethod,
@@ -38,6 +39,8 @@ exports.handler = async (event) => {
       confirm: true,
       metadata: {
         product_name: product_name || "Upsell Product",
+		email : customer_email,
+		phone:customer_phone,
         type: "upsell_product",
       },
     });

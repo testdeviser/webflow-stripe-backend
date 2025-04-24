@@ -1,5 +1,14 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
+const DOWNLOAD_LINKS = {
+  "Ultimate Organic Package": "https://yourdomain.com/downloads/organic-package.zip",
+  "Ultimate Ads Package": "https://yourdomain.com/downloads/ads-package.zip",
+  "Ultimate Brand Scaling Package": "https://yourdomain.com/downloads/brand-scaling.zip",
+  "THE 7-FIGURE META ADS PLAYBOOK": "https://yourdomain.com/downloads/7-figure-playbook.pdf",
+  "5 DFY STATIC ADS DONE FOR YOU": "https://yourdomain.com/downloads/5-dfy-ads.zip",
+  "10 DFY STATIC ADS DONE FOR YOU": "https://yourdomain.com/downloads/10-dfy-ads.zip",
+};
+
 exports.handler = async (event) => {
   const sig = event.headers['stripe-signature'];
 
@@ -66,7 +75,8 @@ exports.handler = async (event) => {
           amount: pi.amount / 100,
           type: pi.metadata.type,
           download_url: pi.metadata.download_url, // Make sure this is passed in Stripe metadata
-          date: new Date(pi.created * 1000).toISOString()
+          date: new Date(pi.created * 1000).toISOString(),
+		  download_url: DOWNLOAD_LINKS[pi.metadata.product_name],
         };
 
         const ghlRes = await fetch(process.env.GHL_WEBHOOK_URL, {
