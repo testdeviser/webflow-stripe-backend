@@ -74,7 +74,7 @@ exports.handler = async (event) => {
           product: pi.metadata.product_name,
           amount: pi.amount / 100,
           type: pi.metadata.type,
-          download_url: pi.metadata.download_url, // Make sure this is passed in Stripe metadata
+         // download_url: pi.metadata.download_url, // Make sure this is passed in Stripe metadata
           date: new Date(pi.created * 1000).toISOString(),
 		  download_url: DOWNLOAD_LINKS[pi.metadata.product_name],
         };
