@@ -1,6 +1,24 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
+  const body = JSON.parse(event.body);
+  const { amount, coupon_code } = body;
+
+  let finalAmount = amount;
+  let discountMessage = "";
+
+  // 💸 Simulated coupon check (replace with real logic or Stripe Coupons if needed)
+  const validCoupons = {
+    "SAVE10": 0.10,
+    "SAVE20": 0.20
+  };
+
+  if (coupon_code && validCoupons[coupon_code.toUpperCase()]) {
+    const discountRate = validCoupons[coupon_code.toUpperCase()];
+    finalAmount = Math.floor(amount * (1 - discountRate));
+    discountMessage = `Coupon ${coupon_code} applied.`;
+  }
+  
   const sig = event.headers['stripe-signature'];
 
   try {
