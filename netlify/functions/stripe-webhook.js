@@ -28,7 +28,8 @@ exports.handler = async (event) => {
 		product: pi.metadata.product_name,
 		amount: pi.amount / 100,
 		type: pi.metadata.type,
-		//email: pi.receipt_email || pi.metadata.email || "unknown",
+		email: pi.receipt_email || pi.metadata.email || "unknown",
+		phone:pi.metadata.phone,
 		status: "Paid",
 		date: new Date(pi.created * 1000).toISOString()
 	  }
@@ -59,7 +60,8 @@ exports.handler = async (event) => {
       try {
         const ghlWebhookPayload = {
           name: pi.metadata.customer_name || 'Customer',
-          email: pi.metadata.email,
+          email: pi.receipt_email || pi.metadata.email || "unknown",
+			phone:pi.metadata.phone,
           product: pi.metadata.product_name,
           amount: pi.amount / 100,
           type: pi.metadata.type,
@@ -76,7 +78,7 @@ exports.handler = async (event) => {
         });
 
         const ghlResult = await ghlRes.text();
-        console.log("✅ Sent data to GHL:".GHL_WEBHOOK_URL, ghlResult);
+        console.log("✅ Sent data to GHL:", ghlResult);
       } catch (err) {
         console.error("❌ Failed to send data to GHL:", err.message);
       }

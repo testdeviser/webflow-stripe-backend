@@ -32,9 +32,10 @@ exports.handler = async (event) => {
 	  payment_method: payment_method_id,
 	  confirmation_method: "automatic",
 	  metadata: {
+		email : email,
 		product_name: product,
 		type: "main_product",
-		phone,
+		phone:phone,
 		country,
 		zip,
 		exp_month,
