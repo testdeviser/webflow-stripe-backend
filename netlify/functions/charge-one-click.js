@@ -49,6 +49,7 @@ exports.handler = async (event) => {
         email: customer_email || "unknown",
         phone: customer_phone || "",
         type: "upsell_product",
+        date: new Date(pi.created * 1000).toISOString()
       },
     });
 
