@@ -23,6 +23,33 @@ exports.handler = async (event) => {
     };
   }
 
+try {
+  const ghlWebhookPayload = {
+    name: pi.metadata.customer_name || 'Customer',
+    email: pi.receipt_email || pi.metadata.email || "unknown",
+    phone:pi.metadata.phone,
+    product: pi.metadata.product_name,
+    amount: pi.amount / 100,
+    type: pi.metadata.type,
+    // download_url: pi.metadata.download_url, // Make sure this is passed in Stripe metadata
+      date: new Date(pi.created * 1000).toISOString(),
+      download_url: DOWNLOAD_LINKS[pi.metadata.product_name],
+  };
+
+  const ghlRes = await fetch(process.env.GHL_WEBHOOK_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(ghlWebhookPayload)
+  });
+
+  const ghlResult = await ghlRes.text();
+  console.log("✅ Sent data to GHL:", ghlResult);
+  console.log(DOWNLOAD_LINKS[pi.metadata.product_name]);
+  } catch (err) {
+    console.error("❌ Failed to send data to GHL:", err.message);
+  }
   try {
     const { customer_id, amount, product_name, customer_name, customer_email, customer_phone } = JSON.parse(event.body);
 
@@ -55,33 +82,6 @@ exports.handler = async (event) => {
       },
     });
     
-    try {
-      const ghlWebhookPayload = {
-        name: pi.metadata.customer_name || 'Customer',
-        email: pi.receipt_email || pi.metadata.email || "unknown",
-        phone:pi.metadata.phone,
-        product: pi.metadata.product_name,
-        amount: pi.amount / 100,
-        type: pi.metadata.type,
-       // download_url: pi.metadata.download_url, // Make sure this is passed in Stripe metadata
-          date: new Date(pi.created * 1000).toISOString(),
-          download_url: DOWNLOAD_LINKS[pi.metadata.product_name],
-      };
-
-      const ghlRes = await fetch(process.env.GHL_WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(ghlWebhookPayload)
-      });
-
-      const ghlResult = await ghlRes.text();
-      console.log("✅ Sent data to GHL:", ghlResult);
-      console.log(DOWNLOAD_LINKS[pi.metadata.product_name]);
-      } catch (err) {
-        console.error("❌ Failed to send data to GHL:", err.message);
-      }
     // Determine redirect flow
     let redirect_url = "/thank-you";
     if (amount === 2700) redirect_url = "/upsell-2?customer_id=" + customer_id;
