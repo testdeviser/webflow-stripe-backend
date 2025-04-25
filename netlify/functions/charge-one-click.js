@@ -45,6 +45,8 @@ exports.handler = async (event) => {
       },
     });
 
+    console.log(paymentIntent);
+
     // Determine redirect flow
     let redirect_url = "/thank-you";
     if (amount === 2700) redirect_url = "/upsell-2?customer_id=" + customer_id;
