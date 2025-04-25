@@ -14,7 +14,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { customer_id, amount, product_name,customer_name, customer_email, customer_phone } = JSON.parse(event.body);
+    const { customer_id, amount, product_name, customer_name, customer_email, customer_phone } = JSON.parse(event.body);
 
     if (!customer_id || !amount) {
       throw new Error("Missing required parameters.");
@@ -31,7 +31,7 @@ exports.handler = async (event) => {
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
-      customer_name: customer_name,
+	  name: customer_name,
       currency: "usd",
       customer: customer_id,
       payment_method: defaultPaymentMethod,
@@ -44,8 +44,6 @@ exports.handler = async (event) => {
         type: "upsell_product",
       },
     });
-
-    console.log(paymentIntent);
 
     // Determine redirect flow
     let redirect_url = "/thank-you";
