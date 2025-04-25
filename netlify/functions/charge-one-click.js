@@ -52,6 +52,8 @@ exports.handler = async (event) => {
       },
     });
 
+    const normalizedProductName = (paymentIntent.metadata.product_name || "").trim();
+    const download_url = DOWNLOAD_LINKS[normalizedProductName] || null;
     // Send data to external webhook (GHL)
     try {
       const ghlWebhookPayload = {
@@ -62,7 +64,7 @@ exports.handler = async (event) => {
         amount: paymentIntent.amount / 100,
         type: paymentIntent.metadata.type,
         date: new Date(paymentIntent.created * 1000).toISOString(),
-        download_url: DOWNLOAD_LINKS[paymentIntent.metadata.product_name] || null,
+        download_url: download_url,
       };
 
       const ghlRes = await fetch(process.env.GHL_WEBHOOK_URL, {
