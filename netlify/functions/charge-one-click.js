@@ -52,33 +52,6 @@ exports.handler = async (event) => {
       },
     });
 
-    // Send data to external webhook (GHL)
-    try {
-      const ghlWebhookPayload = {
-        name: paymentIntent.metadata.customer_name,
-        email: paymentIntent.receipt_email || paymentIntent.metadata.email || "unknown",
-        phone: paymentIntent.metadata.phone,
-        product: paymentIntent.metadata.product_name,
-        amount: paymentIntent.amount / 100,
-        type: paymentIntent.metadata.type,
-        date: new Date(paymentIntent.created * 1000).toISOString(),
-        download_url: paymentIntent.metadata.download_url,
-      };
-
-      const ghlRes = await fetch(process.env.GHL_WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(ghlWebhookPayload)
-      });
-
-      const ghlResult = await ghlRes.text();
-      console.log("✅ Sent data to GHL:", ghlResult);
-    } catch (webhookErr) {
-      console.error("❌ Failed to send data to GHL:", webhookErr.message);
-    }
-
     const name = encodeURIComponent(paymentIntent.metadata.customer_name || "Customer");
     const email = encodeURIComponent(paymentIntent.metadata.email || "");
     const phone = encodeURIComponent(paymentIntent.metadata.phone || "");

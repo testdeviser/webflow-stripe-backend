@@ -4,6 +4,7 @@ const DOWNLOAD_LINKS = {
   "Ultimate Organic Package": "https://www.notion.so/Ultimate-Organic-Post-Swipe-File-1c02b1d91a02802ea91cd44745b72e6c?pvs=4",
   "Ultimate Ads Package": "https://www.notion.so/Ultimate-Ads-Package-Swipe-File-1c02b1d91a0280f78300d81843a4cb77?pvs=4",
   "Ultimate Brand Scaling Package": "https://nebula-bard-3b2.notion.site/Ultimate-Brand-Scaling-Static-Ad-Swipe-File-1bd2b1d91a028189966cd5d6d9d98643?pvs=4",
+  "The 7-Figure Meta Ads Playbook": "https://nebula-bard-3b2.notion.site/The-7-Figure-Meta-Ads-Playbook-1bd2b1d91a0281c2a754e0c20034cfd3?pvs=4",
   //"5 DFY STATIC ADS DONE FOR YOU": "https://yourdomain.com/downloads/5-dfy-ads.zip",
   //"10 DFY STATIC ADS DONE FOR YOU": "https://yourdomain.com/downloads/10-dfy-ads.zip",
 };
