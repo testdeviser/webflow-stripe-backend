@@ -31,7 +31,7 @@ exports.handler = async (event) => {
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
-	    //name: customer_name,
+	  name: customer_name,
       currency: "usd",
       customer: customer_id,
       payment_method: defaultPaymentMethod,
@@ -64,8 +64,13 @@ exports.handler = async (event) => {
       statusCode: 500,
       headers: {
         "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({ 
+        error: err.message || "Unknown error",
+        details: err,
+        stack: err.stack 
+      }),
     };
   }
 };
