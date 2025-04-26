@@ -37,6 +37,7 @@ exports.handler = async (event) => {
 		product: pi.metadata.product_name,
 		amount: pi.amount / 100,
 		type: pi.metadata.type,
+		orderid: pi.id, // ✅ Stripe PaymentIntent ID as Order Number
 		email: pi.receipt_email || pi.metadata.email || "unknown",
 		phone:pi.metadata.phone,
 		status: "Paid",
@@ -77,6 +78,14 @@ exports.handler = async (event) => {
          // download_url: pi.metadata.download_url, // Make sure this is passed in Stripe metadata
           date: new Date(pi.created * 1000).toISOString(),
 		  download_url: DOWNLOAD_LINKS[pi.metadata.product_name],
+		  order_number: pi.id, // ✅ Stripe PaymentIntent ID as Order Number
+			order_date: new Date(pi.created * 1000).toLocaleString('en-US', { 
+			  year: 'numeric', 
+			  month: 'long', 
+			  day: 'numeric', 
+			  hour: '2-digit', 
+			  minute: '2-digit'
+			}) // ✅ Pretty format like "April 24, 2025, 05:30 PM"
         };
 
         const ghlRes = await fetch(process.env.GHL_WEBHOOK_URL, {
