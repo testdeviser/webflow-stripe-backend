@@ -99,6 +99,7 @@ exports.handler = async (event) => {
         const ghlResult = await ghlRes.text();
         console.log("✅ Sent data to GHL:", ghlResult);
 		console.log(DOWNLOAD_LINKS[pi.metadata.product_name]);
+		console.log(pi);
       } catch (err) {
         console.error("❌ Failed to send data to GHL:", err.message);
       }
