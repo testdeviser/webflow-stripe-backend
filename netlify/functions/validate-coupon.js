@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     const validCoupons = {
       "SAVE10": 0.10,
       "SAVE20": 0.20,
-      "SAVE99": 0.99
+      "SAVE98": 0.98
 	  
     };
 
