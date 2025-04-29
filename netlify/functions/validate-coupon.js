@@ -27,7 +27,9 @@ exports.handler = async (event) => {
 
     const validCoupons = {
       "SAVE10": 0.10,
-      "SAVE20": 0.20
+      "SAVE20": 0.20,
+      "SAVE99": 0.99
+	  
     };
 
     const code = coupon?.toUpperCase();
