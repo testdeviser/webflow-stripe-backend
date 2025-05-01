@@ -53,9 +53,10 @@ exports.handler = async (event) => {
     const validCoupons = data.items.reduce((acc, item) => {
       const code = item.fieldData?.code;
       const discount = item.fieldData?.['discount-2']; // use bracket notation for hyphenated keys
-    
+
       if (code && discount != null) {
-        acc[code.toUpperCase()] = parseFloat(discount);
+        // Convert discount from number (e.g., 25) to percentage (e.g., 0.25)
+        acc[code.toUpperCase()] = parseFloat(discount) / 100;
       }
       return acc;
     }, {}); 
@@ -73,7 +74,10 @@ exports.handler = async (event) => {
     }
 
     const discount = validCoupons[code];
-    const discountedAmount = Math.round(amount * (1 - discount));
+    let discountedAmount = Math.round(amount * (1 - discount));
+    if (discount === 1.0) {
+      discountedAmount = 0;
+    }
 
     return {
       statusCode: 200,
