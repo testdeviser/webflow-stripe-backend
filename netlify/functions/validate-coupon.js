@@ -43,10 +43,13 @@ exports.handler = async (event) => {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch coupons from Webflow');
+      console.log('Failed to fetch coupons:', response.statusText);
+      throw new Error(`Failed to fetch coupons: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log('Raw Response:', await response.text());  // Raw response as text
+console.log('Parsed Data:', data);
     console.log(`Fetched ${data.items.length} coupons from Webflow`);
 
     // Get the coupons from Webflow response
