@@ -23,6 +23,8 @@ exports.handler = async (event) => {
   }
 
   try {
+    const { coupon, amount } = JSON.parse(event.body);
+
     // Fetch coupons from Webflow CMS collection using fetch
     const response = await fetch(
       `https://api.webflow.com/v2/collections/${process.env.WF_COUPONS_COLLECTION_ID}/items?live=true`,
