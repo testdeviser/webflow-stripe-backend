@@ -1,12 +1,10 @@
-const fetch = require("node-fetch");
+const headers = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS"
+};
 
 exports.handler = async (event) => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS"
-  };
-
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -25,34 +23,44 @@ exports.handler = async (event) => {
 
   try {
     const { coupon, amount } = JSON.parse(event.body);
-    const submittedCode = coupon?.trim().toUpperCase();
 
-    const API_TOKEN = process.env.WEBFLOW_API_TOKEN;
-    const COLLECTION_ID = process.env.COUPONS_COLLECTION_ID;
+    const code = coupon?.toUpperCase();
+    if (!code || !amount) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "Missing coupon or amount" })
+      };
+    }
 
-    const res = await fetch(`https://api.webflow.com/collections/${COLLECTION_ID}/items?limit=100`, {
-      method: "GET",
+    // Dynamically import node-fetch
+    const fetch = (...args) =>
+      import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+    // Get coupons from Webflow CMS
+    const response = await fetch(`https://api.webflow.com/collections/${process.env.COUPONS_COLLECTION_ID}/items`, {
       headers: {
-        "Authorization": `Bearer ${API_TOKEN}`,
+        "Authorization": `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
         "accept-version": "1.0.0"
       }
     });
 
-    const result = await res.json();
+    const data = await response.json();
 
-    if (!res.ok || !result.items) {
+    if (!response.ok) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: "Failed to fetch coupons from Webflow", details: result })
+        body: JSON.stringify({ error: "Webflow API error", details: data })
       };
     }
 
-    const match = result.items.find(item =>
-      item.name?.trim().toUpperCase() === submittedCode
-    );
+    const coupons = data.items || [];
 
-    if (!match || !match["discount"] || isNaN(match["discount"])) {
+    // Find a matching coupon
+    const found = coupons.find(item => item.name.toUpperCase() === code);
+
+    if (!found || !found.fields.discount) {
       return {
         statusCode: 200,
         headers,
@@ -60,15 +68,17 @@ exports.handler = async (event) => {
       };
     }
 
-    const discount = parseFloat(match["discount"]);
+    const discount = found.fields.discount;
     const discountedAmount = Math.round(amount * (1 - discount));
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ valid: true, discountedAmount })
+      body: JSON.stringify({
+        valid: true,
+        discountedAmount
+      })
     };
-
   } catch (err) {
     return {
       statusCode: 500,
