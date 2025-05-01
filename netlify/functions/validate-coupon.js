@@ -29,7 +29,7 @@ exports.handler = async (event) => {
 
     // Fetch coupons from Webflow CMS collection using fetch
     const response = await fetch(
-      `https://api.webflow.com/collections/${process.env.COUPONS_COLLECTION_ID}/items?live=true`,
+      `https://api.webflow.com/collections/${process.env.WF_COUPONS_COLLECTION_ID}/items?live=true`,
       {
         headers: {
           Authorization: `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
