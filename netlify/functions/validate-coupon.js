@@ -51,13 +51,15 @@ exports.handler = async (event) => {
 
     // Get the coupons from Webflow response
     const validCoupons = data.items.reduce((acc, item) => {
-      if (item.fields?.coupon_code && item.fields?.discount) {
-        acc[item.fields.coupon_code.toUpperCase()] = parseFloat(item.fields.discount);
+      const code = item.fieldData?.code;
+      const discount = item.fieldData?.['discount-2']; // use bracket notation for hyphenated keys
+    
+      if (code && discount != null) {
+        acc[code.toUpperCase()] = parseFloat(discount);
       }
       return acc;
-    }, {});
+    }, {}); 
     
-
     console.log('Valid Coupons:', validCoupons);
 
     const code = coupon?.toUpperCase();
