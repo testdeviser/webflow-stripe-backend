@@ -56,6 +56,8 @@ exports.handler = async (event) => {
     }
 
     const coupons = data.items || [];
+    console.log("Webflow item sample:", JSON.stringify(coupons[0], null, 2));
+
 
     // Find a matching coupon
     const found = coupons.find(item => item.name.toUpperCase() === code);
