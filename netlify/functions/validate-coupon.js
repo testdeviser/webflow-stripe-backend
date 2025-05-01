@@ -37,15 +37,18 @@ exports.handler = async (event) => {
       }
     );
 
+    const responseText = await response.text();
+    console.log("Full Webflow Response:", responseText);
+
+
     if (!response.ok) {
       throw new Error('Error fetching coupons from Webflow');
     }
 
     const data = await response.json();
     const coupons = data.items;
-    const validCoupon = coupons.find(couponItem => couponItem.name.toUpperCase() === coupon?.toUpperCase());
 
-    const code = coupon?.toUpperCase();
+    const validCoupon = coupons.find(couponItem => couponItem.name.toUpperCase() === coupon?.toUpperCase());
 
     if (!validCoupon) {
       return {
