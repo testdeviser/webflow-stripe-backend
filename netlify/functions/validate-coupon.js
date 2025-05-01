@@ -31,7 +31,7 @@ exports.handler = async (event) => {
         headers: {
           Authorization: `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
           "Content-Type": "application/json",
-          "Accept-Version": "2.0.0",
+          "Accept-Version": "1.0.0",
         },
       }
     );
