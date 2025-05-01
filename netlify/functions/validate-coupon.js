@@ -5,7 +5,6 @@ exports.handler = async (event) => {
     "Access-Control-Allow-Methods": "POST, OPTIONS"
   };
 
-  // Handle preflight (OPTIONS) request
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -24,7 +23,6 @@ exports.handler = async (event) => {
 
   try {
     const { coupon, amount } = JSON.parse(event.body);
-
     // Fetch coupons from Webflow CMS collection using fetch
     const response = await fetch(
       `https://api.webflow.com/v2/collections/${process.env.WF_COUPONS_COLLECTION_ID}/items?live=true`,
@@ -37,31 +35,23 @@ exports.handler = async (event) => {
         },
       }
     );
-    console.log(response); 
-    console.log('New Response');
     
     if (!response.ok) {
-      console.log('Failed to fetch coupons:', response.statusText);
       throw new Error(`Failed to fetch coupons: ${response.statusText}`);
     }
 
-    const rawText = await response.text();
-    console.log('Raw Response:', rawText);
-    const data = JSON.parse(rawText);
+    const data = JSON.parse(await response.text());
 
     // Get the coupons from Webflow response
     const validCoupons = data.items.reduce((acc, item) => {
       const code = item.fieldData?.code;
-      const discount = item.fieldData?.['discount-2']; // use bracket notation for hyphenated keys
-
+      const discount = item.fieldData?.['discount-2'];
       if (code && discount != null) {
         // Convert discount from number (e.g., 25) to percentage (e.g., 0.25)
         acc[code.toUpperCase()] = parseFloat(discount) / 100;
       }
       return acc;
     }, {}); 
-    
-    console.log('Valid Coupons:', validCoupons);
 
     const code = coupon?.toUpperCase();
 
