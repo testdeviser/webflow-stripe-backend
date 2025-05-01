@@ -26,21 +26,18 @@ exports.handler = async (event) => {
     const { coupon, amount } = JSON.parse(event.body);
     console.log('Received coupon:', coupon);
     console.log('Received amount:', amount);
-    // Fetch coupons dynamically from Webflow CMS
-    const webflowAPIKey = process.env.WEBFLOW_API_TOKEN;
-    const collectionId = process.env.COUPONS_COLLECTION_ID;
 
-    if (!webflowAPIKey || !collectionId) {
-      throw new Error('Missing Webflow API key or collection ID');
-    }
     // Fetch coupons from Webflow CMS collection using fetch
-    const response = await fetch(`https://api.webflow.com/collections/${collectionId}/items`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${webflowAPIKey}`,
-        'accept-version': '1.0.0'
+    const response = await fetch(
+      `https://api.webflow.com/collections/${process.env.COUPONS_COLLECTION_ID}/items?live=true`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
+          "Content-Type": "application/json",
+          "Accept-Version": "2.0.0",
+        },
       }
-    });
+    );
 
     if (!response.ok) {
       console.log('Failed to fetch coupons:', response.statusText);
