@@ -23,28 +23,29 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { coupon, amount } = JSON.parse(event.body);
+    const couponitems =  { coupon, amount } = JSON.parse(event.body);
 
-    const response = await fetch(
-      `https://api.webflow.com/collections/${process.env.COUPONS_COLLECTION_ID}/items?live=true`,
+    const res = await fetch( `https://api.webflow.com/collections/${process.env.COUPONS_COLLECTION_ID}/items`,
       {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
           "Content-Type": "application/json",
-          "Accept-Version": "1.0.0",
+          "Accept-Version": "2.0.0",
         },
+        body: JSON.stringify(couponitems),
       }
     );
 
-    const responseText = await response.text();
+    const responseText = await res.text();
     console.log("Full Webflow Response:", responseText);
 
 
-    if (!response.ok) {
+    if (!res.ok) {
       throw new Error('Error fetching coupons from Webflow');
     }
 
-    const data = await response.json();
+    const data = await res.json();
     const coupons = data.items;
 
     const validCoupon = coupons.find(couponItem => couponItem.name.toUpperCase() === coupon?.toUpperCase());
