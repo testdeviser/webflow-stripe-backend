@@ -22,8 +22,19 @@ exports.handler = async (event) => {
     };
   }
 
+  let body;
   try {
-    const { coupon, amount } = JSON.parse(event.body);
+    body = JSON.parse(event.body); // ✅ Only parse once
+  } catch (e) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Invalid JSON body" })
+    };
+  }
+
+  try {
+    const { coupon, amount } = body;
     console.log('Received coupon:', coupon);
     console.log('Received amount:', amount);
 
