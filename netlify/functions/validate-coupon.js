@@ -1,16 +1,12 @@
-const headers = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS"
-};
+export async function handler(event) {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS"
+  };
 
-exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers,
-      body: "OK"
-    };
+    return { statusCode: 200, headers, body: "OK" };
   }
 
   if (event.httpMethod !== "POST") {
@@ -23,46 +19,48 @@ exports.handler = async (event) => {
 
   try {
     const { coupon, amount } = JSON.parse(event.body);
-
     const code = coupon?.toUpperCase();
-    if (!code || !amount) {
+
+    if (!code) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: "Missing coupon or amount" })
+        body: JSON.stringify({ valid: false, error: "No coupon code provided" })
       };
     }
 
-    // Dynamically import node-fetch
-    const fetch = (...args) =>
-      import('node-fetch').then(({ default: fetch }) => fetch(...args));
+    const WEBFLOW_API_TOKEN = process.env.WEBFLOW_API_TOKEN;
+    const COUPONS_COLLECTION_ID = process.env.COUPONS_COLLECTION_ID;
 
-    // Get coupons from Webflow CMS
-    const response = await fetch(`https://api.webflow.com/collections/${process.env.COUPONS_COLLECTION_ID}/items`, {
-      headers: {
-        "Authorization": `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
-        "accept-version": "1.0.0"
+    const webflowResponse = await fetch(
+      `https://api.webflow.com/v1/collections/${COUPONS_COLLECTION_ID}/items?limit=100`,
+      {
+        headers: {
+          Authorization: `Bearer ${WEBFLOW_API_TOKEN}`,
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        }
       }
-    });
+    );
 
-    const data = await response.json();
+    const json = await webflowResponse.json();
 
-    if (!response.ok) {
+    // Handle Webflow API error
+    if (!webflowResponse.ok) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: "Webflow API error", details: data })
+        body: JSON.stringify({ error: "Webflow API Error", details: json })
       };
     }
 
-    const coupons = data.items || [];
-    console.log("Webflow item sample:", JSON.stringify(coupons[0], null, 2));
+    const coupons = json.items;
 
+    const found = coupons.find(
+      (item) => item?.fields?.name?.toUpperCase() === code
+    );
 
-    // Find a matching coupon
-    const found = coupons.find(item => item.name.toUpperCase() === code);
-
-    if (!found || !found.fields.discount) {
+    if (!found || !found.fields) {
       return {
         statusCode: 200,
         headers,
@@ -70,7 +68,17 @@ exports.handler = async (event) => {
       };
     }
 
+    // Adjust this key if your field has a custom slug
     const discount = found.fields.discount;
+
+    if (!discount || typeof discount !== "number") {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: "Invalid discount field in Webflow" })
+      };
+    }
+
     const discountedAmount = Math.round(amount * (1 - discount));
 
     return {
@@ -85,7 +93,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: "Server error", details: err.message })
+      body: JSON.stringify({ error: "Server Error", details: err.message })
     };
   }
-};
+}
