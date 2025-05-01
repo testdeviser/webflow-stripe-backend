@@ -22,22 +22,7 @@ exports.handler = async (event) => {
     };
   }
 
-  let body;
   try {
-    body = JSON.parse(event.body); // ✅ Only parse once
-  } catch (e) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: "Invalid JSON body" })
-    };
-  }
-
-  try {
-    const { coupon, amount } = body;
-    console.log('Received coupon:', coupon);
-    console.log('Received amount:', amount);
-
     // Fetch coupons from Webflow CMS collection using fetch
     const response = await fetch(
       `https://api.webflow.com/v2/collections/${process.env.WF_COUPONS_COLLECTION_ID}/items?live=true`,
