@@ -1,4 +1,4 @@
-const fetch = require("node-fetch");
+const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
 const WEBFLOW_API_TOKEN = process.env.WEBFLOW_API_TOKEN;
 const COLLECTION_ID = process.env.COUPONS_COLLECTION_ID;
