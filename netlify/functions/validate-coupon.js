@@ -43,6 +43,7 @@ exports.handler = async (event) => {
     }
 
     const data = await response.json();
+    console.log(`Fetched ${data.items.length} coupons from Webflow`);
 
     // Get the coupons from Webflow response
     const validCoupons = data.items.reduce((acc, item) => {
@@ -50,6 +51,8 @@ exports.handler = async (event) => {
       acc[item.coupon_code] = parseFloat(item.discount);
       return acc;
     }, {});
+    
+    console.log('Valid Coupons:', validCoupons);
 
     const code = coupon?.toUpperCase();
 
