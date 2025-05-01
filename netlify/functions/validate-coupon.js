@@ -39,7 +39,9 @@ exports.handler = async (event) => {
         },
       }
     );
-
+    console.log(response); 
+    console.log('New Response');
+    
     if (!response.ok) {
       console.log('Failed to fetch coupons:', response.statusText);
       throw new Error(`Failed to fetch coupons: ${response.statusText}`);
