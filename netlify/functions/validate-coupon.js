@@ -51,10 +51,12 @@ exports.handler = async (event) => {
 
     // Get the coupons from Webflow response
     const validCoupons = data.items.reduce((acc, item) => {
-      // Assuming your Webflow CMS has fields `coupon_code` and `discount`
-      acc[item.coupon_code] = parseFloat(item.discount);
+      if (item.fields?.coupon_code && item.fields?.discount) {
+        acc[item.fields.coupon_code.toUpperCase()] = parseFloat(item.fields.discount);
+      }
       return acc;
     }, {});
+    
 
     console.log('Valid Coupons:', validCoupons);
 
