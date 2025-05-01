@@ -1,11 +1,12 @@
+const fetch = require("node-fetch");
+
 exports.handler = async (event) => {
   const headers = {
-    "Access-Control-Allow-Origin": "*", // Or restrict to a specific domain
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Allow-Methods": "POST, OPTIONS"
   };
 
-  // Handle preflight (OPTIONS) request
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -23,34 +24,35 @@ exports.handler = async (event) => {
   }
 
   try {
-    const couponitems =  { coupon, amount } = JSON.parse(event.body);
+    const { coupon, amount } = JSON.parse(event.body);
+    const submittedCode = coupon?.trim().toUpperCase();
 
-    const res = await fetch( `https://api.webflow.com/collections/${process.env.COUPONS_COLLECTION_ID}/items`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.WEBFLOW_API_TOKEN}`,
-          "Content-Type": "application/json",
-          "Accept-Version": "2.0.0",
-        },
-        body: JSON.stringify(couponitems),
+    const API_TOKEN = process.env.WEBFLOW_API_TOKEN;
+    const COLLECTION_ID = process.env.COUPONS_COLLECTION_ID;
+
+    const res = await fetch(`https://api.webflow.com/collections/${COLLECTION_ID}/items?limit=100`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${API_TOKEN}`,
+        "accept-version": "1.0.0"
       }
-    );
+    });
 
-    const responseText = await res.text();
-    console.log("Full Webflow Response:", responseText);
+    const result = await res.json();
 
-
-    if (!res.ok) {
-      throw new Error('Error fetching coupons from Webflow');
+    if (!res.ok || !result.items) {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: "Failed to fetch coupons from Webflow", details: result })
+      };
     }
 
-    const data = await res.json();
-    const coupons = data.items;
+    const match = result.items.find(item =>
+      item.name?.trim().toUpperCase() === submittedCode
+    );
 
-    const validCoupon = coupons.find(couponItem => couponItem.name.toUpperCase() === coupon?.toUpperCase());
-
-    if (!validCoupon) {
+    if (!match || !match["discount"] || isNaN(match["discount"])) {
       return {
         statusCode: 200,
         headers,
@@ -58,17 +60,15 @@ exports.handler = async (event) => {
       };
     }
 
-    const discount = validCoupon.discount || 0;
+    const discount = parseFloat(match["discount"]);
     const discountedAmount = Math.round(amount * (1 - discount));
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({
-        valid: true,
-        discountedAmount
-      })
+      body: JSON.stringify({ valid: true, discountedAmount })
     };
+
   } catch (err) {
     return {
       statusCode: 500,
